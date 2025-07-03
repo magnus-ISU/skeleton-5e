@@ -1,10 +1,16 @@
-// Magic Item Previewer Content Script
+// Magic Item Previewer Content Script with Sorting
 ;(function () {
 	'use strict'
 
 	let popup = null
 	let currentHoveredLink = null
 	let popupTimeout = null
+	let sortState = {
+		rarity: 'none', // 'none', 'asc', 'desc'
+		price: 'none', // 'none', 'asc', 'desc'
+	}
+
+	const rarityOrder = { C: 1, U: 2, R: 3, V: 4, L: 5, A: 6 }
 
 	// Create popup element
 	function createPopup() {
@@ -107,6 +113,191 @@
 		return link.href && (link.href.includes('/magicitems/magic-item?id=') || link.href.includes('/spells/spell?spellid='))
 	}
 
+	// Parse price from text (e.g., "1,000 gp" -> 1000)
+	function parsePrice(priceText) {
+		if (!priceText) return 0
+		// Remove commas and extract number
+		const match = priceText.replace(/,/g, '').match(/(\d+(?:\.\d+)?)/)
+		return match ? parseFloat(match[1]) : 0
+	}
+
+	// Add sort buttons to header
+	function addSortButtons() {
+		const headerRow = document.querySelector('.flexheadrow.row0')
+		if (!headerRow || headerRow.hasAttribute('data-sort-added')) return
+
+		headerRow.setAttribute('data-sort-added', 'true')
+
+		// Add sort button to rarity column
+		const rarityCol = headerRow.querySelector('.col2.miheadRare')
+		if (rarityCol) {
+			const sortBtn = document.createElement('button')
+			sortBtn.className = 'sort-btn'
+			sortBtn.innerHTML = '↕'
+			sortBtn.title = 'Sort by rarity'
+			sortBtn.addEventListener('click', () => sortByRarity())
+			rarityCol.appendChild(sortBtn)
+		}
+
+		// Add sort button to value column
+		const valueCol = headerRow.querySelector('.col5')
+		if (valueCol) {
+			const sortBtn = document.createElement('button')
+			sortBtn.className = 'sort-btn'
+			sortBtn.innerHTML = '↕'
+			sortBtn.title = 'Sort by price'
+			sortBtn.addEventListener('click', () => sortByPrice())
+			valueCol.appendChild(sortBtn)
+		}
+
+		// Add CSS for sort buttons
+		if (!document.getElementById('sort-button-styles')) {
+			const style = document.createElement('style')
+			style.id = 'sort-button-styles'
+			style.textContent = `
+				.sort-btn {
+					background: none;
+					border: none;
+					color: #666;
+					cursor: pointer;
+					font-size: 12px;
+					margin-left: 5px;
+					padding: 2px 4px;
+					border-radius: 3px;
+					transition: all 0.2s;
+				}
+				.sort-btn:hover {
+					background: #f0f0f0;
+					color: #333;
+				}
+				.sort-btn.asc {
+					color: #007bff;
+				}
+				.sort-btn.desc {
+					color: #dc3545;
+				}
+				.sort-btn.asc::after {
+					content: ' ↑';
+				}
+				.sort-btn.desc::after {
+					content: ' ↓';
+				}
+			`
+			document.head.appendChild(style)
+		}
+	}
+
+	// Sort by rarity
+	function sortByRarity() {
+		const container = document.querySelector('.flexheadrow.row0').parentElement
+		const rows = Array.from(container.querySelectorAll('.contentrow'))
+
+		// Cycle through sort states
+		if (sortState.rarity === 'none') {
+			sortState.rarity = 'asc'
+		} else if (sortState.rarity === 'asc') {
+			sortState.rarity = 'desc'
+		} else {
+			sortState.rarity = 'none'
+		}
+
+		// Reset price sort
+		sortState.price = 'none'
+		updateSortButtons()
+
+		if (sortState.rarity === 'none') {
+			// Restore original order (by row class number)
+			rows.sort((a, b) => {
+				const aNum = parseInt(a.className.match(/row(\d+)/)?.[1] || '0')
+				const bNum = parseInt(b.className.match(/row(\d+)/)?.[1] || '0')
+				return aNum - bNum
+			})
+		} else {
+			rows.sort((a, b) => {
+				const aRarity =
+					a
+						.querySelector('.col2.flexcol.colRare')
+						?.textContent?.trim()
+						?.replace(/Rarity:\s*/, '') || ''
+				const bRarity =
+					b
+						.querySelector('.col2.flexcol.colRare')
+						?.textContent?.trim()
+						?.replace(/Rarity:\s*/, '') || ''
+
+				const aOrder = rarityOrder[aRarity] || 999
+				const bOrder = rarityOrder[bRarity] || 999
+
+				return sortState.rarity === 'asc' ? aOrder - bOrder : bOrder - aOrder
+			})
+		}
+
+		// Reorder DOM elements
+		rows.forEach((row) => container.appendChild(row))
+	}
+
+	// Sort by price
+	function sortByPrice() {
+		const container = document.querySelector('.flexheadrow.row0').parentElement
+		const rows = Array.from(container.querySelectorAll('.contentrow'))
+
+		// Cycle through sort states
+		if (sortState.price === 'none') {
+			sortState.price = 'asc'
+		} else if (sortState.price === 'asc') {
+			sortState.price = 'desc'
+		} else {
+			sortState.price = 'none'
+		}
+
+		// Reset rarity sort
+		sortState.rarity = 'none'
+		updateSortButtons()
+
+		if (sortState.price === 'none') {
+			// Restore original order (by row class number)
+			rows.sort((a, b) => {
+				const aNum = parseInt(a.className.match(/row(\d+)/)?.[1] || '0')
+				const bNum = parseInt(b.className.match(/row(\d+)/)?.[1] || '0')
+				return aNum - bNum
+			})
+		} else {
+			rows.sort((a, b) => {
+				const aPriceText =
+					a
+						.querySelector('.col5.flexcol.colmod')
+						?.textContent?.trim()
+						?.replace(/Value:\s*/, '') || '0'
+				const bPriceText =
+					b
+						.querySelector('.col5.flexcol.colmod')
+						?.textContent?.trim()
+						?.replace(/Value:\s*/, '') || '0'
+
+				const aPrice = parsePrice(aPriceText)
+				const bPrice = parsePrice(bPriceText)
+
+				return sortState.price === 'asc' ? aPrice - bPrice : bPrice - aPrice
+			})
+		}
+
+		// Reorder DOM elements
+		rows.forEach((row) => container.appendChild(row))
+	}
+
+	// Update sort button appearances
+	function updateSortButtons() {
+		const rarityBtn = document.querySelector('.col2.miheadRare .sort-btn')
+		const priceBtn = document.querySelector('.col5 .sort-btn')
+
+		if (rarityBtn) {
+			rarityBtn.className = 'sort-btn ' + (sortState.rarity === 'none' ? '' : sortState.rarity)
+		}
+		if (priceBtn) {
+			priceBtn.className = 'sort-btn ' + (sortState.price === 'none' ? '' : sortState.price)
+		}
+	}
+
 	// Add event listeners to previewable links
 	function addLinkListeners() {
 		// Find all magic item links in the content rows
@@ -150,6 +341,12 @@
 		})
 	}
 
+	// Initialize sorting functionality
+	function initializeSorting() {
+		addSortButtons()
+		addLinkListeners()
+	}
+
 	// Hide popup when clicking outside or pressing escape
 	document.addEventListener('click', function (e) {
 		if (popup && !popup.contains(e.target) && !e.target.closest('.contentrow a, .spellnamelink a')) {
@@ -165,16 +362,16 @@
 
 	// Initialize when page loads
 	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', addLinkListeners)
+		document.addEventListener('DOMContentLoaded', initializeSorting)
 	} else {
-		addLinkListeners()
+		initializeSorting()
 	}
 
 	// Watch for dynamically added content
 	const observer = new MutationObserver(function (mutations) {
 		mutations.forEach(function (mutation) {
 			if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-				addLinkListeners()
+				initializeSorting()
 			}
 		})
 	})
