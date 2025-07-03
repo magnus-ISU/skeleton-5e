@@ -75,13 +75,13 @@
 
 /* Enhance the appearance of magic item and spell links */
 .contentrow a[href*='/magicitems/magic-item?id='],
-.spellnamelink a[href*='/spells/spell?spellid='] {
+a[href*='/spells/spell?spellid='] {
 	transition: all 0.2s ease;
 	position: relative;
 }
 
 .contentrow a[href*='/magicitems/magic-item?id=']:hover,
-.spellnamelink a[href*='/spells/spell?spellid=']:hover {
+a[href*='/spells/spell?spellid=']:hover {
 	color: #8b4513 !important;
 	text-decoration: underline;
 	cursor: pointer;
@@ -96,7 +96,7 @@
 	animation: sparkle 1s infinite;
 }
 
-.spellnamelink a[href*='/spells/spell?spellid=']:hover::after {
+a[href*='/spells/spell?spellid=']:hover::after {
 	content: ' ✨';
 	position: absolute;
 	right: -20px;

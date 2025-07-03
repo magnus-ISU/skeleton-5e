@@ -80,7 +80,7 @@
 				}
 			} catch (e) {
 				// Cross-origin restrictions prevent styling and scrolling, but popup will still work
-				console.log('Cannot style iframe content due to cross-origin restrictions')
+				console.error('Cannot access iframe content due to cross-origin restrictions:', e)
 			}
 		})
 	}
@@ -110,17 +110,13 @@
 	// Add event listeners to previewable links
 	function addLinkListeners() {
 		// Find all magic item links in the content rows
-		const contentRows = document.querySelectorAll('.contentrow')
-		// Find all spell links
+		const magicItemLinks = document.querySelectorAll('.contentrow a[href*="/magicitems/magic-item?id="]')
+
+		// Find all spell links in spell name divs
 		const spellLinks = document.querySelectorAll('.spellnamelink a[href*="/spells/spell?spellid="]')
 
 		// Combine both sets of links
-		const allLinks = [
-			...Array.from(contentRows)
-				.map((row) => row.querySelector('a[href*="/magicitems/magic-item?id="]'))
-				.filter(Boolean),
-			...Array.from(spellLinks),
-		]
+		const allLinks = [...magicItemLinks, ...spellLinks]
 
 		allLinks.forEach((link) => {
 			if (link && !link.hasAttribute('data-popup-listener')) {
