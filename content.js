@@ -753,14 +753,21 @@
 		updateSortButtons()
 
 		if (sortState.rarity === 'none') {
-			// Restore original order (by row class number)
+			// Restore original order (by row class number) but still keep excluded items at the bottom
 			rows.sort((a, b) => {
+				const aExcluded = shopList.excluded.has(getItemId(a))
+				const bExcluded = shopList.excluded.has(getItemId(b))
+				if (aExcluded !== bExcluded) return aExcluded ? 1 : -1
 				const aNum = parseInt(a.className.match(/row(\d+)/)?.[1] || '0')
 				const bNum = parseInt(b.className.match(/row(\d+)/)?.[1] || '0')
 				return aNum - bNum
 			})
 		} else {
 			rows.sort((a, b) => {
+				// Always push excluded items to the end
+				const aExcluded = shopList.excluded.has(getItemId(a))
+				const bExcluded = shopList.excluded.has(getItemId(b))
+				if (aExcluded !== bExcluded) return aExcluded ? 1 : -1
 				const aRarity =
 					a
 						.querySelector('.col2.flexcol.colRare')
@@ -802,14 +809,21 @@
 		updateSortButtons()
 
 		if (sortState.price === 'none') {
-			// Restore original order (by row class number)
+			// Restore original order (by row class number) but keep excluded last
 			rows.sort((a, b) => {
+				const aExcluded = shopList.excluded.has(getItemId(a))
+				const bExcluded = shopList.excluded.has(getItemId(b))
+				if (aExcluded !== bExcluded) return aExcluded ? 1 : -1
 				const aNum = parseInt(a.className.match(/row(\d+)/)?.[1] || '0')
 				const bNum = parseInt(b.className.match(/row(\d+)/)?.[1] || '0')
 				return aNum - bNum
 			})
 		} else {
 			rows.sort((a, b) => {
+				// Push excluded to bottom first
+				const aExcluded = shopList.excluded.has(getItemId(a))
+				const bExcluded = shopList.excluded.has(getItemId(b))
+				if (aExcluded !== bExcluded) return aExcluded ? 1 : -1
 				const aPriceText =
 					a
 						.querySelector('.col5.flexcol.colmod')
@@ -827,6 +841,7 @@
 				return sortState.price === 'asc' ? aPrice - bPrice : bPrice - aPrice
 			})
 		}
+
 		// Reorder DOM elements
 		rows.forEach((row) => container.appendChild(row))
 	}
