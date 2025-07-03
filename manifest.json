@@ -1,0 +1,27 @@
+{
+	"manifest_version": 3,
+	"name": "Thieves Guild Magic Item Previewer",
+	"version": "1.0",
+	"description": "Shows magic item details in a popup when hovering over links on thievesguild.cc",
+	"permissions": ["activeTab"],
+	"host_permissions": ["https://www.thievesguild.cc/*"],
+	"content_scripts": [
+		{
+			"matches": ["https://www.thievesguild.cc/magicitems/*"],
+			"js": ["content.js"],
+			"css": ["styles.css"]
+		}
+	],
+	"action": {
+		"default_icon": {
+			"16": "icon16.png",
+			"48": "icon48.png",
+			"128": "icon128.png"
+		}
+	},
+	"icons": {
+		"16": "icon16.png",
+		"48": "icon48.png",
+		"128": "icon128.png"
+	}
+}
