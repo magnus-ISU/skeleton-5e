@@ -381,9 +381,13 @@
 		const container = document.querySelector('.flexheadrow.row0')?.parentElement
 		if (!container) return
 
+		// If this custom item is already rendered, do not add it again (prevents duplicates)
+		if (document.querySelector(`[data-custom-id="${item.id}"]`)) return
+
 		// Create a row that follows the same structure/styles as a regular item row
 		const customRow = document.createElement('div')
 		customRow.className = 'contentrow flexrow custom-item'
+		customRow.setAttribute('data-custom-id', item.id)
 
 		customRow.innerHTML = `
 			<div class="flexcol flexrowtop firstcell col1">
@@ -491,7 +495,18 @@
 				// Apply price override if exists
 				if (shopList.priceOverrides.has(itemId)) {
 					const newPrice = shopList.priceOverrides.get(itemId)
-					priceElement.textContent = `Value: ${newPrice}`
+					priceElement.textContent = `${newPrice}`
+				}
+
+				// Clean attunement column: replace lone "N" with empty string
+				const attuneCell = row.querySelector('.col3.flexcol.colAttune')
+				if (attuneCell) {
+					// Look for a text node that equals "N"
+					attuneCell.childNodes.forEach((node) => {
+						if (node.nodeType === 3 && node.textContent.trim() === 'N') {
+							node.textContent = ''
+						}
+					})
 				}
 			}
 		})
@@ -899,6 +914,9 @@
 		})
 	}
 
+	// Track whether we've applied the initial auto-sort
+	let hasAutoSorted = false
+
 	// Initialize sorting functionality
 	function initializeSorting() {
 		// Avoid re-entrancy while we are actively mutating the DOM
@@ -916,6 +934,12 @@
 
 		addSortButtons()
 		addLinkListeners()
+
+		// Auto-sort by price once after initial load
+		if (!hasAutoSorted) {
+			sortByPrice()
+			hasAutoSorted = true
+		}
 
 		// Release the guard after the current call stack, once all DOM mutations are done
 		setTimeout(() => {
