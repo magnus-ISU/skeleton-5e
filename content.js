@@ -19,6 +19,9 @@
 		customItems: new Map(), // Map of custom item ID to item data
 	}
 
+	// Guard flag to prevent recursive initialisation caused by our own DOM edits
+	let isInitializing = false
+
 	// Immediately parse any shop list data present in the current URL so the page reflects it from the very start
 	parseShopListFromURL()
 
@@ -886,6 +889,10 @@
 
 	// Initialize sorting functionality
 	function initializeSorting() {
+		// Avoid re-entrancy while we are actively mutating the DOM
+		if (isInitializing) return
+		isInitializing = true
+
 		// Make sure we always work with the latest data encoded in the URL
 		parseShopListFromURL()
 
@@ -897,6 +904,11 @@
 
 		addSortButtons()
 		addLinkListeners()
+
+		// Release the guard after the current call stack, once all DOM mutations are done
+		setTimeout(() => {
+			isInitializing = false
+		}, 0)
 	}
 
 	// Hide popup when clicking outside or pressing escape
@@ -921,11 +933,23 @@
 
 	// Watch for dynamically added content
 	const observer = new MutationObserver(function (mutations) {
-		mutations.forEach(function (mutation) {
-			if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-				initializeSorting()
+		// Skip if we are already inside our own initialise logic
+		if (isInitializing) return
+
+		// Determine whether any meaningful content rows have been added
+		let shouldInit = false
+		mutations.forEach((mutation) => {
+			if (mutation.type === 'childList') {
+				mutation.addedNodes.forEach((node) => {
+					if (node.nodeType === 1 && node.classList && node.classList.contains('contentrow')) {
+						shouldInit = true
+					}
+				})
 			}
 		})
+		if (shouldInit) {
+			initializeSorting()
+		}
 	})
 
 	observer.observe(document.body, {
