@@ -1,8 +1,8 @@
 /* Magic Item Popup Styles */
 #magic-item-popup {
 	position: fixed;
-	width: 400px;
-	height: 300px;
+	width: 50vw;
+	height: 90vh;
 	background: #fff;
 	border: 2px solid #8b4513;
 	border-radius: 8px;
@@ -13,6 +13,8 @@
 	transition: opacity 0.2s ease, visibility 0.2s ease;
 	font-family: Arial, sans-serif;
 	overflow: hidden;
+	left: 50vw;
+	top: 5vh;
 }
 
 #magic-item-popup.visible {
@@ -71,13 +73,15 @@
 	background: white;
 }
 
-/* Enhance the appearance of magic item links */
-.contentrow a[href*='/magicitems/magic-item?id='] {
+/* Enhance the appearance of magic item and spell links */
+.contentrow a[href*='/magicitems/magic-item?id='],
+.spellnamelink a[href*='/spells/spell?spellid='] {
 	transition: all 0.2s ease;
 	position: relative;
 }
 
-.contentrow a[href*='/magicitems/magic-item?id=']:hover {
+.contentrow a[href*='/magicitems/magic-item?id=']:hover,
+.spellnamelink a[href*='/spells/spell?spellid=']:hover {
 	color: #8b4513 !important;
 	text-decoration: underline;
 	cursor: pointer;
@@ -85,6 +89,15 @@
 
 .contentrow a[href*='/magicitems/magic-item?id=']:hover::after {
 	content: ' 🔮';
+	position: absolute;
+	right: -20px;
+	top: 0;
+	font-size: 12px;
+	animation: sparkle 1s infinite;
+}
+
+.spellnamelink a[href*='/spells/spell?spellid=']:hover::after {
+	content: ' ✨';
 	position: absolute;
 	right: -20px;
 	top: 0;

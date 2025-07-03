@@ -27,6 +27,11 @@
 		// Add close button functionality
 		popup.querySelector('.popup-close').addEventListener('click', hidePopup)
 
+		// Hide popup when mouse leaves the popup area
+		popup.addEventListener('mouseleave', function () {
+			hidePopup()
+		})
+
 		return popup
 	}
 
@@ -43,9 +48,14 @@
 		// Set iframe source
 		iframe.src = link.href
 
-		// Position popup near cursor
-		popup.style.left = Math.min(x + 10, window.innerWidth - 420) + 'px'
-		popup.style.top = Math.min(y + 10, window.innerHeight - 320) + 'px'
+		// Position popup on the right 50% of the screen
+		const popupWidth = window.innerWidth * 0.5
+		const popupHeight = window.innerHeight * 0.9
+
+		popup.style.width = popupWidth + 'px'
+		popup.style.height = popupHeight + 'px'
+		popup.style.left = window.innerWidth * 0.5 + 'px'
+		popup.style.top = (window.innerHeight - popupHeight) / 2 + 'px'
 
 		// Show popup
 		popup.classList.add('visible')
@@ -86,18 +96,27 @@
 		}
 	}
 
-	// Check if link is a magic item link
-	function isMagicItemLink(link) {
-		return link.href && link.href.includes('/magicitems/magic-item?id=')
+	// Check if link is a magic item or spell link
+	function isPreviewableLink(link) {
+		return link.href && (link.href.includes('/magicitems/magic-item?id=') || link.href.includes('/spells/spell?spellid='))
 	}
 
-	// Add event listeners to magic item links
+	// Add event listeners to previewable links
 	function addLinkListeners() {
 		// Find all magic item links in the content rows
 		const contentRows = document.querySelectorAll('.contentrow')
+		// Find all spell links
+		const spellLinks = document.querySelectorAll('.spellnamelink a[href*="/spells/spell?spellid="]')
 
-		contentRows.forEach((row) => {
-			const link = row.querySelector('a[href*="/magicitems/magic-item?id="]')
+		// Combine both sets of links
+		const allLinks = [
+			...Array.from(contentRows)
+				.map((row) => row.querySelector('a[href*="/magicitems/magic-item?id="]'))
+				.filter(Boolean),
+			...Array.from(spellLinks),
+		]
+
+		allLinks.forEach((link) => {
 			if (link && !link.hasAttribute('data-popup-listener')) {
 				link.setAttribute('data-popup-listener', 'true')
 
@@ -111,17 +130,18 @@
 					}, 300)
 				})
 
-				link.addEventListener('mouseleave', function () {
-					if (currentHoveredLink === this) {
+				// Don't hide popup when leaving the link - let the popup handle it
+				link.addEventListener('mouseleave', function (e) {
+					// Check if mouse is moving toward the popup
+					if (popup && popup.classList.contains('visible')) {
+						// Give a small delay to allow mouse to reach popup
+						setTimeout(() => {
+							if (popup && !popup.matches(':hover')) {
+								hidePopup()
+							}
+						}, 100)
+					} else {
 						hidePopup()
-					}
-				})
-
-				// Update popup position on mouse move
-				link.addEventListener('mousemove', function (e) {
-					if (popup && popup.classList.contains('visible') && currentHoveredLink === this) {
-						popup.style.left = Math.min(e.clientX + 10, window.innerWidth - 420) + 'px'
-						popup.style.top = Math.min(e.clientY + 10, window.innerHeight - 320) + 'px'
 					}
 				})
 			}
@@ -130,7 +150,7 @@
 
 	// Hide popup when clicking outside or pressing escape
 	document.addEventListener('click', function (e) {
-		if (popup && !popup.contains(e.target) && !e.target.closest('.contentrow a')) {
+		if (popup && !popup.contains(e.target) && !e.target.closest('.contentrow a, .spellnamelink a')) {
 			hidePopup()
 		}
 	})
