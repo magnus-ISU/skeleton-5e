@@ -145,13 +145,13 @@
 				if (newPrice === '' || newPrice === '0' || newPrice === '0 gp') {
 					// Remove price override or mark as excluded
 					shopList.priceOverrides.delete(itemId)
-					this.textContent = 'Value: -'
+					this.textContent = '-'
 					this.style.textDecoration = 'line-through'
 					this.style.opacity = '0.6'
 				} else {
 					// Set new price
 					shopList.priceOverrides.set(itemId, newPrice)
-					this.textContent = `Value: ${newPrice}`
+					this.textContent = `${newPrice}`
 					this.style.textDecoration = 'none'
 					this.style.opacity = '1'
 				}
@@ -419,11 +419,9 @@
 
 		// Add delete functionality (button now inside col5)
 		customRow.querySelector('.delete-custom-btn').addEventListener('click', function () {
-			if (confirm('Delete this custom item?')) {
-				shopList.customItems.delete(item.id)
-				updateURL()
-				customRow.remove()
-			}
+			shopList.customItems.delete(item.id)
+			updateURL()
+			customRow.remove()
 		})
 
 		// Add custom popup functionality
@@ -441,28 +439,27 @@
 	function showCustomItemPopup(item, x, y) {
 		const popup = createPopup()
 		const title = popup.querySelector('.popup-title')
-		const content = popup.querySelector('.popup-content')
+		const iframe = popup.querySelector('iframe')
+		const customDiv = popup.querySelector('.custom-content')
+
+		// Hide iframe and show custom div
+		if (iframe) {
+			iframe.style.display = 'none'
+			iframe.src = ''
+		}
+		if (customDiv) {
+			customDiv.style.display = 'block'
+			customDiv.innerHTML = `
+				<div style="padding: 20px; font-family: Arial, sans-serif;">
+					<h1 style="color: #007bff; margin-bottom: 10px;">${item.name}</h1>
+					<div style="margin-bottom: 10px;"><strong>Rarity:</strong> ${item.rarity}</div>
+					<div style="margin-bottom: 10px;"><strong>Value:</strong> ${item.price}</div>
+					<div style="margin-bottom: 10px;"><strong>Description:</strong></div>
+					<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 4px solid #007bff;">${item.description.replace(/\n/g, '<br>') || 'No description provided.'}</div>
+				</div>`
+		}
 
 		title.textContent = item.name
-
-		// Create custom content instead of iframe
-		content.innerHTML = `
-			<div style="padding: 20px; font-family: Arial, sans-serif;">
-				<h1 style="color: #007bff; margin-bottom: 10px;">${item.name}</h1>
-				<div style="margin-bottom: 10px;">
-					<strong>Rarity:</strong> ${item.rarity}
-				</div>
-				<div style="margin-bottom: 10px;">
-					<strong>Value:</strong> ${item.price}
-				</div>
-				<div style="margin-bottom: 10px;">
-					<strong>Description:</strong>
-				</div>
-				<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 4px solid #007bff;">
-					${item.description.replace(/\n/g, '<br>') || 'No description provided.'}
-				</div>
-			</div>
-		`
 
 		// Position popup
 		const popupWidth = window.innerWidth * 0.5
@@ -524,14 +521,15 @@
 		popup = document.createElement('div')
 		popup.id = 'magic-item-popup'
 		popup.innerHTML = `
-            <div class="popup-header">
-                <span class="popup-title">Loading...</span>
-                <button class="popup-close">&times;</button>
-            </div>
-            <div class="popup-content">
-                <iframe src="" frameborder="0"></iframe>
-            </div>
-        `
+			<div class="popup-header">
+				<span class="popup-title">Loading...</span>
+				<button class="popup-close">&times;</button>
+			</div>
+			<div class="popup-content">
+				<iframe src="" frameborder="0"></iframe>
+				<div class="custom-content" style="display:none;"></div>
+			</div>
+		`
 
 		document.body.appendChild(popup)
 
@@ -550,7 +548,12 @@
 	function showPopup(link, x, y) {
 		const popup = createPopup()
 		const iframe = popup.querySelector('iframe')
+		const customDiv = popup.querySelector('.custom-content')
 		const title = popup.querySelector('.popup-title')
+
+		// Show iframe, hide custom content
+		if (iframe) iframe.style.display = 'block'
+		if (customDiv) customDiv.style.display = 'none'
 
 		// Extract item name from link text
 		const itemName = link.textContent.trim()
