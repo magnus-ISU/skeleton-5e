@@ -72,8 +72,14 @@
                     .container { max-width: 100%; }
                 `
 				iframeDoc.head.appendChild(style)
+
+				// Scroll to the title element
+				const titleElement = iframeDoc.querySelector('.titlemain h1')
+				if (titleElement) {
+					titleElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+				}
 			} catch (e) {
-				// Cross-origin restrictions prevent styling, but popup will still work
+				// Cross-origin restrictions prevent styling and scrolling, but popup will still work
 				console.log('Cannot style iframe content due to cross-origin restrictions')
 			}
 		})
