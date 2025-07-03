@@ -195,7 +195,7 @@
 			padding: 2px 6px;
 			cursor: pointer;
 			font-size: 10px;
-			margin-left: 5px;
+			margin-right: 5px;
 			transition: all 0.2s;
 		`
 
@@ -222,10 +222,10 @@
 			updateURL()
 		})
 
-		// Add to first column
+		// Insert as the very first element of the first column so it appears to the left of the title
 		const firstCol = row.querySelector('.flexcol')
 		if (firstCol) {
-			firstCol.appendChild(excludeBtn)
+			firstCol.insertBefore(excludeBtn, firstCol.firstChild)
 		}
 
 		// Apply excluded styling if needed
@@ -381,27 +381,21 @@
 		const container = document.querySelector('.flexheadrow.row0')?.parentElement
 		if (!container) return
 
+		// Create a row that follows the same structure/styles as a regular item row
 		const customRow = document.createElement('div')
-		customRow.className = 'contentrow custom-item'
-		customRow.style.cssText = `
-			border: 2px solid #007bff;
-			border-radius: 5px;
-			margin: 5px 0;
-			background: #f8f9fa;
-		`
+		customRow.className = 'contentrow flexrow custom-item'
 
 		customRow.innerHTML = `
-			<div class="flexcol col1">
-				<div class="custom-item-name" style="font-weight: bold; color: #007bff;">${item.name}</div>
-				<button class="delete-custom-btn" style="background: #dc3545; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer; font-size: 10px; margin-top: 5px;">Delete</button>
+			<div class="flexcol flexrowtop firstcell col1">
+				<!-- Exclude button will be inserted by addExcludeButton -->
+				<a href="#" class="custom-item-name" style="font-weight: bold;" data-custom-id="${item.id}">${item.name}</a>
 			</div>
-			<div class="flexcol col2 colRare">
-				<div>Rarity: ${item.rarity}</div>
-			</div>
+			<div class="flexcol col2 colRare">${item.rarity}</div>
 			<div class="flexcol col3"></div>
 			<div class="flexcol col4"></div>
 			<div class="flexcol col5 colmod custom-price" style="cursor: pointer; border-bottom: 1px dashed #ccc;" title="Click to edit price">
-				Value: ${item.price}
+				${item.price}
+				<button class="delete-custom-btn" style="margin-left:8px; background:#dc3545; color:white; border:none; border-radius:3px; padding:2px 6px; cursor:pointer; font-size:10px;">Delete</button>
 			</div>
 		`
 
@@ -413,7 +407,13 @@
 			container.appendChild(customRow)
 		}
 
-		// Add delete functionality
+		// Make price editable
+		makeEditablePrice(customRow.querySelector('.custom-price'), item.id)
+
+		// Add exclude button so behaviour matches regular items
+		addExcludeButton(customRow, item.id)
+
+		// Add delete functionality (button now inside col5)
 		customRow.querySelector('.delete-custom-btn').addEventListener('click', function () {
 			if (confirm('Delete this custom item?')) {
 				shopList.customItems.delete(item.id)
@@ -421,9 +421,6 @@
 				customRow.remove()
 			}
 		})
-
-		// Make price editable
-		makeEditablePrice(customRow.querySelector('.custom-price'), item.id)
 
 		// Add custom popup functionality
 		const nameElement = customRow.querySelector('.custom-item-name')
